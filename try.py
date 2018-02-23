@@ -20,27 +20,27 @@ class HMM(n_states=None, n_obs=None, Pi=None, A=None, B=None):
 
     def log_forward(self, obs_sequence):
         T=len(obs_sequence)#obs_sequence: (T, 1)
-        alpha=np.zeros([T,self.N])
+        alpha_log=np.zeros([T,self.N])
         #init alpha
-        alpha[0] = np.multiply(self.Pi, self.B[:, obs_sequence[1]])
+        alpha_log[0] = self.Pi_log+self.B_log[:, obs_sequence[1]]
 
         #induc alpha
         for t in range(0,T-1):
-            alpha[t+1]=alpha[t].dot(self.A).T*self.B[:, obs_sequence[t+1]]
-        self.alpha_log=np.log(alpha)
+            alpha_log[t+1]=np.log(np.sum(np.exp(alpha_log[t]+self.A_log),axis=1))+self.B_log[:, obs_sequence[t+1]]
+        self.alpha_log=alpha_log
         # alpha /= np.sum(alpha, axis=1)
         pass
 
     def log_backward(self,obs_sequence):
         T = len(obs_sequence)
-        beta=np.zeros([T,self.N])
+        beta_log=np.zeros([T,self.N])
         #init beta
-        beta[-1]=1
+        beta_log[-1]=np.log(1)
         #induc beta
         for t in range(T-2,-1,-1):
-            beta[t]=self.A.dot((self.B[:,obs_sequence[t+1]]*beta[t+1]).reshape(-1,1))
+            beta_log[t]=np.sum(np.exp(self.A_log+(self.B_log[:,obs_sequence[t+1]]+beta_log[t+1]).reshape(-1,1)), axis=0)
 
-        self.beta_log=np.log(beta)
+        self.beta_log=beta_log
         pass
 
     def baum_welch(self, obs_sequence_list, max_iter=100):
@@ -50,8 +50,6 @@ class HMM(n_states=None, n_obs=None, Pi=None, A=None, B=None):
         gamma_log=np.zeros([self.N, T])
 
         for iter in range(max_iter):
-
-
 
             # CAL eps
             for t in range(T-1):
@@ -70,14 +68,16 @@ class HMM(n_states=None, n_obs=None, Pi=None, A=None, B=None):
             for vk in range(np.shape(self.B_log)[1]):
                 self.B_log[:,vk]=np.log(np.sum(gamma[:,obs_sequence_list==vk],axis=1))-np.log(np.sum(gamma,axis=1))
 
-            crit=np.norm(self.A_log)
+            crit=np.linalg.norm(self.A_log)
+            print("diference with last iteration: %f"%crit)
 
     def initPara(self):
-        
 
-def data2observation():
-	
-	return ob
+
+
+# def data2observation():
+#
+# 	return ob
 
 
 
