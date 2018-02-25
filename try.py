@@ -18,7 +18,7 @@ trainset_folder='./train_data'
 testset_folder='./train_data'
 M=30#observation symbol number
 N=10#num of hidden states
-mx_it=500
+mx_it=1000
 max_trial=5
 # scoreboard={'beat3.pkl':0, 'beat4.pkl':0, 'eight.pkl':0, 'inf.pkl':0,'wave.pkl':0,'circle.pkl':0}
 proboard={}
@@ -32,14 +32,14 @@ class HMM:
         self.B=B #(N, M)
         self.mdl=mdl
     def forward(self, obs_sequence):
-        T=len(obs_sequence)#obs_sequence: (T, 1)
-        alpha=np.zeros([T,self.N])
+        self.T=len(obs_sequence)#obs_sequence: (T, 1)
+        alpha=np.zeros([self.T,self.N])
         #init alpha
         alpha[0] = self.Pi.T*self.B[:, obs_sequence[0]]
-        ct=np.zeros([T,1])
+        ct=np.zeros([self.T,1])
         ct[0] = 1. / np.maximum(1E-10, np.sum(alpha[0]))
         #induc alpha
-        for t in range(0,T-1):
+        for t in range(0,self.T-1):
             ans=alpha[t:t+1].dot(self.A)*self.B[:, obs_sequence[t+1]]
             ans[np.isinf(ans)] = np.finfo(np.float64).eps
             ct[t+1,0]=1/np.maximum(np.sum(ans),1e-16)
@@ -58,13 +58,13 @@ class HMM:
         # pass
 
     def backward(self,obs_sequence):
-        T = len(obs_sequence)
-        beta=np.zeros([T,self.N])
+        # self.T = len(obs_sequence)
+        beta=np.zeros([self.T,self.N])
         #init beta
         beta[-1]=1
         beta[-1] *= self.ct[-1]
         #induc beta
-        for t in range(T-2,-1,-1):
+        for t in range(self.T-2,-1,-1):
             beta[t]=self.A.dot((self.B[:,obs_sequence[t+1]]*beta[t+1]).reshape(-1,1))[:,0]
             beta[t]*=self.ct[t]
             # ans=(self.A.dot(self.B[:, obs_sequence[t + 1]].reshape(-1, 1)).T * beta[t + 1])[0]
@@ -78,15 +78,15 @@ class HMM:
         pass
         # return p
     def baum_welch(self, obs_sequence_list, max_iter=200):
-        T=len(obs_sequence_list)
+        # T=len(obs_sequence_list)
         #E-step
-        eps=np.zeros([self.N,self.N,T])
-        gamma=np.zeros([self.N, T])
+        eps=np.zeros([self.N,self.N,self.T])
+        gamma=np.zeros([self.N, self.T])
         old_pro=np.inf
         for iter in range(max_iter):
             # old_A=self.A
             # CAL eps
-            for t in range(T-1):
+            for t in range(self.T-1):
                 ans=self.alpha[t:t+1].T*self.A*(self.beta[t+1:t+2]*self.B[:,obs_sequence_list[t+1]])
                 norm_eps=np.sum(ans)
                 eps[:, :, t]=ans/norm_eps
@@ -151,16 +151,16 @@ def obseqGeneration(q,M,cluster=None):
 
 if __name__=='__main__':
     if mode==0:#train mode
-        AW=np.empty((0,6))
+        q=np.empty((0,4))
         for file in os.listdir(trainset_folder):
             if file.endswith(".txt") :
                 dict={}
                 path_train=os.path.join(trainset_folder, file)
                 # break
-                AW=impData(path_train)
-                # A,W,ts=impData(path_train)
-                # q=np.append(q,exportUKF(A,W,ts).T,axis=0)#(n, 4)
-                obseq_labels=obseqGeneration(AW,M,dict)
+                # AW=impData(path_train)
+                A,W,ts=impData(path_train)
+                q=np.append(q,exportUKF(A,W,ts).T,axis=0)#(n, 4)
+                obseq_labels=obseqGeneration(q,M,dict)
                 A,B,Pi=initPara(N,M)
 
                 hmm=HMM(n_states=N,n_obs=M,mdl=file,Pi=Pi,A=A,B=B)
@@ -182,13 +182,10 @@ if __name__=='__main__':
                 path_test=os.path.join(testset_folder, file)
                 test_list.append(file)
                 # break
-                AW=impData(path_test)
-                # A,W,ts=impData(path_test)
-                # q=exportUKF(A,W,ts).T#(n, 4)
-                # obseq_labels=
-                # obseq_labels = np.zeros([max_trial, q.shape[0]],dtype=int)
+                # AW=impData(path_test)
+                A,W,ts=impData(path_test)
+                q=exportUKF(A,W,ts).T#(n, 4)
 
-                # for mm in range(max_trial):
                 print(file)
                 scoreboard = {'beat3': 0, 'beat4': 0, 'eight': 0, 'inf': 0, 'wave': 0,
                               'circle': 0}
@@ -196,7 +193,7 @@ if __name__=='__main__':
                 for filePKL in os.listdir('./'):
                     if filePKL.endswith(".pkl"):
                         mdl=pickle.load(open( filePKL, "rb" ))
-                        obseq_labels = obseqGeneration(AW, M,mdl['cluster'])
+                        obseq_labels = obseqGeneration(q, M,mdl['cluster'])
                         hmm = HMM(n_states=mdl['N'], n_obs=mdl['M'], Pi=mdl['Pi'], A=mdl['A'], B=mdl['B'])
                         # pro=0
                         # for mm in range(max_trial):

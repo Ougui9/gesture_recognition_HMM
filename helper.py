@@ -23,23 +23,23 @@ def impData(path):
 
 
     data = pd.read_csv(path, sep='\t', header=None).values.T.astype(float)
-    AW=data[1:,:]
-    # A,W,ts = data[1:4,:],data[4:,:],data[0:1,:]
+    # AW=data[1:,:]
+    A,W,ts = data[1:4,:],data[4:,:],data[0:1,:]
 
-    # # A[0:1] *= -1
-    # A_bias=np.mean(A[:,:150],axis=1)
-    # A_bias[-1]=A_bias[-1]+Az_addbias
-    # # A[0:1] *= -1
-    # A=(A-A_bias.reshape(3,1))*scale_A
-    # # A[0:1] *= -1
-    #
-    #
-    # W_bias = np.mean(W[:, :200], axis=1)
-    # W = (W - W_bias.reshape(3,1)) * scale_W
-    # W[[0,1,2]]=W[[1,2,0]]
-    #
-    # return A,W,ts
-    return AW.T
+    # A[0:1] *= -1
+    A_bias=np.mean(A[:,:150],axis=1)
+    A_bias[-1]=A_bias[-1]+Az_addbias
+    # A[0:1] *= -1
+    A=(A-A_bias.reshape(3,1))*scale_A
+    # A[0:1] *= -1
+
+
+    W_bias = np.mean(W[:, :200], axis=1)
+    W = (W - W_bias.reshape(3,1)) * scale_W
+    W[[0,1,2]]=W[[1,2,0]]
+
+    return A,W,ts
+    # return AW.T
 
 #
 # def
