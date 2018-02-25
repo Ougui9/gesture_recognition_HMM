@@ -10,13 +10,15 @@ import pickle
 import operator
 import pandas as pd
 
-mode=0#0:train
+mode=1#0:train
 trainset_folder='./train_data'
 testset_folder='./train_data'
+mdl_folder='./mdl_final'
 M=30#observation symbol number
 N=10#num of hidden states
 mx_it=500
 max_trial=5
+
 
 
 class HMM:
@@ -180,9 +182,9 @@ if __name__=='__main__':
                 scoreboard = {'beat3': 0, 'beat4': 0, 'eight': 0, 'inf': 0, 'wave': 0,
                               'circle': 0}
                 proboard={}
-                for filePKL in os.listdir('./'):
+                for filePKL in os.listdir(mdl_folder):
                     if filePKL.endswith(".pkl"):
-                        mdl=pickle.load(open( filePKL, "rb" ))
+                        mdl=pickle.load(open( os.path.join(mdl_folder,filePKL), "rb" ))
                         obseq_labels = obseqGeneration(AW, M,mdl['cluster'])
                         hmm = HMM(n_states=mdl['N'], n_obs=mdl['M'], Pi=mdl['Pi'], A=mdl['A'], B=mdl['B'])
 
