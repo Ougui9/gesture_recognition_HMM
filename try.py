@@ -10,25 +10,27 @@ from ukf import processA,processW,caldQ
 from sklearn.cluster import KMeans
 import pickle
 import operator
-test_file='eight02.txt'
-train_class='eight'
+import pandas as pd
+test_file='eight04.txt'
+# train_class='eight'
 mode=1#0:train
 trainset_folder='./train_data'
 testset_folder='./train_data'
 M=30#observation symbol number
 N=10#num of hidden states
-mx_it=1000
+mx_it=500
 max_trial=5
-scoreboard={'beat3.pkl':0, 'beat4.pkl':0, 'eight.pkl':0, 'inf.pkl':0,'wave.pkl':0,'circle.pkl':0}
-proboard={'beat3.pkl':0, 'beat4.pkl':0, 'eight.pkl':0, 'inf.pkl':0,'wave.pkl':0,'circle.pkl':0}
-dict={}
+# scoreboard={'beat3.pkl':0, 'beat4.pkl':0, 'eight.pkl':0, 'inf.pkl':0,'wave.pkl':0,'circle.pkl':0}
+proboard={}
+# dict={}
 class HMM:
-    def __init__(self, n_states, n_obs, Pi=None, A=None, B=None):
+    def __init__(self, n_states, n_obs,mdl=None, Pi=None, A=None, B=None):
         self.N=n_states#N
         self.M=n_obs#M
         self.Pi=Pi# (N, 1)
         self.A=A # (N, N)
         self.B=B #(N, M)
+        self.mdl=mdl
     def forward(self, obs_sequence):
         T=len(obs_sequence)#obs_sequence: (T, 1)
         alpha=np.zeros([T,self.N])
@@ -50,7 +52,7 @@ class HMM:
         ct_log=np.log(ct[:-1])
         ct_log[np.isinf(ct_log)+np.isnan(ct_log)]=np.finfo(np.float64).eps
         pro=-np.sum(ct_log)
-        print(pro)
+        # print(pro)
         return pro
         # # pass
         # pass
@@ -80,7 +82,7 @@ class HMM:
         #E-step
         eps=np.zeros([self.N,self.N,T])
         gamma=np.zeros([self.N, T])
-
+        old_pro=np.inf
         for iter in range(max_iter):
             # old_A=self.A
             # CAL eps
@@ -107,18 +109,22 @@ class HMM:
             pro=self.forward(obs_sequence_list)
             self.backward(obs_sequence_list)
 
-            print("No.%d probability: %f"%(iter,pro))
-            if iter%100==0:
-                print(1)
-        dict['N']=self.N
-        dict['M']=self.M
-        dict['A']=self.A
-        dict['B']=self.B
-        dict['Pi']=self.Pi
-        dict['alpha']=self.alpha
-        dict['beta']=self.beta
-        dict['ob']=obs_sequence_list
-        pickle.dump(dict, open("%s.pkl"%train_class, "wb"))
+            print("%s No.%d probability: %f"%(self.mdl,iter,pro))
+            # old_pro
+            # if iter%100==0:
+                # print(1)
+            if np.abs(old_pro-pro)<=1e-2 or iter==max_iter-1:
+                dict['N']=self.N
+                dict['M']=self.M
+                dict['A']=self.A
+                dict['B']=self.B
+                dict['Pi']=self.Pi
+                dict['alpha']=self.alpha
+                dict['beta']=self.beta
+                dict['ob']=obs_sequence_list
+                pickle.dump(dict, open("%s.pkl"%self.mdl, "wb"))
+                break
+            old_pro=pro
 
 
 
@@ -145,32 +151,36 @@ def obseqGeneration(q,M,cluster=None):
 
 if __name__=='__main__':
     if mode==0:#train mode
-        AW=np.empty((0,6))
+        AW=np.empty((0,4))
         for file in os.listdir(trainset_folder):
-            if file.endswith(".txt") and file[0:5]==train_class[0:5]:
+            if file.endswith(".txt") :
+                dict={}
                 path_train=os.path.join(trainset_folder, file)
                 # break
-                AW=np.append(AW,impData(path_train),axis=0)
+                AW=impData(path_train)
                 # A,W,ts=impData(path_train)
                 # q=np.append(q,exportUKF(A,W,ts).T,axis=0)#(n, 4)
-        obseq_labels=obseqGeneration(AW,M)
-        A,B,Pi=initPara(N,M)
+                obseq_labels=obseqGeneration(AW,M,dict)
+                A,B,Pi=initPara(N,M)
 
-        hmm=HMM(n_states=N,n_obs=M,Pi=Pi,A=A,B=B)
-        # print(1)
-        hmm.forward(obseq_labels)
-        _=hmm.backward(obseq_labels)
-        hmm.baum_welch(obseq_labels,max_iter=mx_it)
+                hmm=HMM(n_states=N,n_obs=M,mdl=file,Pi=Pi,A=A,B=B)
+                # print(1)
+                hmm.forward(obseq_labels)
+                _=hmm.backward(obseq_labels)
+                hmm.baum_welch(obseq_labels,max_iter=mx_it)
 
         # print(1)
     elif mode==1:
 
 
 
-
+        df=pd.DataFrame()
+        test_list=[]
+        pred_list=[]
         for file in os.listdir(testset_folder):
-            if file.endswith(".txt") and file==test_file:
+            if file.endswith(".txt") :
                 path_test=os.path.join(testset_folder, file)
+                test_list.append(file)
                 # break
                 AW=impData(path_test)
                 # A,W,ts=impData(path_test)
@@ -179,9 +189,10 @@ if __name__=='__main__':
                 # obseq_labels = np.zeros([max_trial, q.shape[0]],dtype=int)
 
                 # for mm in range(max_trial):
-
-
-
+                print(file)
+                scoreboard = {'beat3': 0, 'beat4': 0, 'eight': 0, 'inf': 0, 'wave': 0,
+                              'circle': 0}
+                proboard={}
                 for filePKL in os.listdir('./'):
                     if filePKL.endswith(".pkl"):
                         mdl=pickle.load(open( filePKL, "rb" ))
@@ -190,10 +201,33 @@ if __name__=='__main__':
                         # pro=0
                         # for mm in range(max_trial):
                         proboard[filePKL]=hmm.forward(obseq_labels)
-                        print('test proba of %s on %s:%f'%(file,filePKL,proboard[filePKL]))
-                # win=max(proboard.items(), key=operator.itemgetter(1))[0]
+                        # print('test proba of %s on %s:%f'%(file,filePKL,proboard[filePKL]))
+                rank=sorted(proboard.items(), key=operator.itemgetter(1))[::-1]
+                for ii in range(5):
+                    sco=(1+(4-ii)*0.2)
+                    if rank[ii][0][0:5]=='beat3':
+                        scoreboard['beat3']+=sco
+                    elif rank[ii][0][0:5]=='beat4':
+                        scoreboard['beat4'] += sco
+                    elif rank[ii][0][0:5] == 'eight':
+                        scoreboard['eight'] += sco
+                    elif rank[ii][0][0:5]=='circl':
+                        scoreboard['circle'] += sco
+                    elif rank[ii][0][0]=='i':
+                        scoreboard['inf'] += sco
+                    elif rank[ii][0][0]=='w':
+                        scoreboard['wave'] += sco
+                print(scoreboard)
+                df=df.append(scoreboard,ignore_index=True)
+                pred_list.append(max(scoreboard.items(), key=operator.itemgetter(1))[0])
+                print('Ground truth:%s \nPredicition:%s'%(file,max(scoreboard.items(), key=operator.itemgetter(1))[0]))
+                print('\n')
                 # scoreboard[win]+=1
                 # print(scoreboard)
+        df.insert(loc=0, column='GroundTruth', value=test_list)
+        df.insert(loc=df.shape[1], column='Pred', value=pred_list)
+        print(df)
+        df.to_csv('./res/pred_result.csv', sep='\t')
 
 
     # hhm=HHM()

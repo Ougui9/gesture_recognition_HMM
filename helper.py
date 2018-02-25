@@ -41,6 +41,9 @@ def impData(path):
     # return A,W,ts
     return AW.T
 
+#
+# def
+
 
 
 
