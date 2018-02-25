@@ -11,9 +11,9 @@ from sklearn.cluster import KMeans
 import pickle
 import operator
 import pandas as pd
-test_file='eight04.txt'
+# test_file='eight04.txt'
 # train_class='eight'
-mode=1#0:train
+mode=0#0:train
 trainset_folder='./train_data'
 testset_folder='./train_data'
 M=30#observation symbol number
@@ -151,7 +151,7 @@ def obseqGeneration(q,M,cluster=None):
 
 if __name__=='__main__':
     if mode==0:#train mode
-        AW=np.empty((0,4))
+        AW=np.empty((0,6))
         for file in os.listdir(trainset_folder):
             if file.endswith(".txt") :
                 dict={}
@@ -206,17 +206,17 @@ if __name__=='__main__':
                 for ii in range(5):
                     rank_sco=(4-ii)*0.1
                     if rank[ii][0][0:5]=='beat3':
-                        scoreboard['beat3']+=1+rank_sco/(2/18)
+                        scoreboard['beat3']+=1+rank_sco*1.1
                     elif rank[ii][0][0:5]=='beat4':
-                        scoreboard['beat4'] += 1+rank_sco/(2/18)
+                        scoreboard['beat4'] += 1+rank_sco*1.1
                     elif rank[ii][0][0:5] == 'eight':
-                        scoreboard['eight'] += 1+rank_sco/(5/18)
+                        scoreboard['eight'] += 1+rank_sco
                     elif rank[ii][0][0:5]=='circl':
-                        scoreboard['circle'] += 1+rank_sco/(5/18)
+                        scoreboard['circle'] += 1+rank_sco
                     elif rank[ii][0][0]=='i':
-                        scoreboard['inf'] += 1+rank_sco/(5/18)
+                        scoreboard['inf'] += 1+rank_sco
                     elif rank[ii][0][0]=='w':
-                        scoreboard['wave'] += 1+rank_sco/(5/18)
+                        scoreboard['wave'] += 1+rank_sco/(4/18)
                 print(scoreboard)
                 df=df.append(scoreboard,ignore_index=True)
                 pred_list.append(max(scoreboard.items(), key=operator.itemgetter(1))[0])
