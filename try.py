@@ -11,16 +11,16 @@ from sklearn.cluster import KMeans
 import pickle
 import operator
 import pandas as pd
-# test_file='eight04.txt'
-# train_class='eight'
-mode=0#0:train
+
+mode=1#0:train
 trainset_folder='./train_data'
 testset_folder='./train_data'
+model_folder='./'
 M=30#observation symbol number
 N=10#num of hidden states
 mx_it=1000
 max_trial=5
-# scoreboard={'beat3.pkl':0, 'beat4.pkl':0, 'eight.pkl':0, 'inf.pkl':0,'wave.pkl':0,'circle.pkl':0}
+
 proboard={}
 # dict={}
 class HMM:
@@ -45,7 +45,7 @@ class HMM:
             ct[t+1,0]=1/np.maximum(np.sum(ans),1e-16)
             alpha[t + 1]=ans*ct[t,0]
             alpha[t + 1] = np.clip(alpha[t + 1], a_min=1E-100, a_max=1)
-        # alpha /= np.sum(alpha, axis=1)
+
         alpha[np.isinf(alpha)]=np.finfo(np.float64).eps
         self.alpha = alpha
         self.ct=ct
@@ -54,8 +54,7 @@ class HMM:
         pro=-np.sum(ct_log)
         # print(pro)
         return pro
-        # # pass
-        # pass
+
 
     def backward(self,obs_sequence):
         # self.T = len(obs_sequence)
@@ -67,18 +66,13 @@ class HMM:
         for t in range(self.T-2,-1,-1):
             beta[t]=self.A.dot((self.B[:,obs_sequence[t+1]]*beta[t+1]).reshape(-1,1))[:,0]
             beta[t]*=self.ct[t]
-            # ans=(self.A.dot(self.B[:, obs_sequence[t + 1]].reshape(-1, 1)).T * beta[t + 1])[0]
-            # beta[t] =ans/ np.sum(ans)
-        # p = self.alpha * beta
-        # p[np.isinf(p)] = np.finfo(np.float64).eps
 
-        # beta[np.isinf(beta)] = np.finfo(np.float64).eps
         self.beta=beta
-        # p=np.sum(np.log(np.sum(p,axis=1)))
+
         pass
         # return p
     def baum_welch(self, obs_sequence_list, max_iter=200):
-        # T=len(obs_sequence_list)
+
         #E-step
         eps=np.zeros([self.N,self.N,self.T])
         gamma=np.zeros([self.N, self.T])
@@ -98,8 +92,6 @@ class HMM:
 
             #M-step
             self.Pi=gamma[:,0]
-            # self.Pi[np.isinf(self.Pi)] = np.finfo(np.float64).eps
-
             self.A=np.sum(eps[:,:,:-1],axis=2)/np.sum(gamma[:,:-1],axis=1)
             self.A[np.isinf(self.A)] = np.finfo(np.float64).eps
             for vk in range(np.shape(self.B)[1]):
@@ -110,10 +102,8 @@ class HMM:
             self.backward(obs_sequence_list)
 
             print("%s No.%d probability: %f"%(self.mdl,iter,pro))
-            # old_pro
-            # if iter%100==0:
-                # print(1)
-            if np.abs(old_pro-pro)<=1e-2 or iter==max_iter-1:
+
+            if (np.abs(old_pro-pro)<=1e-3 and pro>=old_pro)or iter==max_iter-1:
                 dict['N']=self.N
                 dict['M']=self.M
                 dict['A']=self.A
@@ -151,7 +141,7 @@ def obseqGeneration(q,M,cluster=None):
 
 if __name__=='__main__':
     if mode==0:#train mode
-        q=np.empty((0,4))
+        # q=np.empty((0,4))
         for file in os.listdir(trainset_folder):
             if file.endswith(".txt") :
                 dict={}
@@ -159,7 +149,7 @@ if __name__=='__main__':
                 # break
                 # AW=impData(path_train)
                 A,W,ts=impData(path_train)
-                q=np.append(q,exportUKF(A,W,ts).T,axis=0)#(n, 4)
+                q=exportUKF(A,W,ts).T#(n, 4)
                 obseq_labels=obseqGeneration(q,M,dict)
                 A,B,Pi=initPara(N,M)
 
@@ -195,6 +185,7 @@ if __name__=='__main__':
                         mdl=pickle.load(open( filePKL, "rb" ))
                         obseq_labels = obseqGeneration(q, M,mdl['cluster'])
                         hmm = HMM(n_states=mdl['N'], n_obs=mdl['M'], Pi=mdl['Pi'], A=mdl['A'], B=mdl['B'])
+
                         # pro=0
                         # for mm in range(max_trial):
                         proboard[filePKL]=hmm.forward(obseq_labels)
