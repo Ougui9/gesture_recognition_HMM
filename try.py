@@ -204,19 +204,19 @@ if __name__=='__main__':
                         # print('test proba of %s on %s:%f'%(file,filePKL,proboard[filePKL]))
                 rank=sorted(proboard.items(), key=operator.itemgetter(1))[::-1]
                 for ii in range(5):
-                    sco=(1+(4-ii)*0.2)
+                    rank_sco=(4-ii)*0.1
                     if rank[ii][0][0:5]=='beat3':
-                        scoreboard['beat3']+=sco
+                        scoreboard['beat3']+=1+rank_sco/(2/18)
                     elif rank[ii][0][0:5]=='beat4':
-                        scoreboard['beat4'] += sco
+                        scoreboard['beat4'] += 1+rank_sco/(2/18)
                     elif rank[ii][0][0:5] == 'eight':
-                        scoreboard['eight'] += sco
+                        scoreboard['eight'] += 1+rank_sco/(5/18)
                     elif rank[ii][0][0:5]=='circl':
-                        scoreboard['circle'] += sco
+                        scoreboard['circle'] += 1+rank_sco/(5/18)
                     elif rank[ii][0][0]=='i':
-                        scoreboard['inf'] += sco
+                        scoreboard['inf'] += 1+rank_sco/(5/18)
                     elif rank[ii][0][0]=='w':
-                        scoreboard['wave'] += sco
+                        scoreboard['wave'] += 1+rank_sco/(5/18)
                 print(scoreboard)
                 df=df.append(scoreboard,ignore_index=True)
                 pred_list.append(max(scoreboard.items(), key=operator.itemgetter(1))[0])
@@ -227,7 +227,7 @@ if __name__=='__main__':
         df.insert(loc=0, column='GroundTruth', value=test_list)
         df.insert(loc=df.shape[1], column='Pred', value=pred_list)
         print(df)
-        df.to_csv('./res/pred_result.csv', sep='\t')
+        df.to_csv('./res/pred_result.csv', index=False)
 
 
     # hhm=HHM()
