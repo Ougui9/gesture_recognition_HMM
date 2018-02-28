@@ -12,8 +12,9 @@ import pandas as pd
 
 mode=1#0:train
 trainset_folder='./train_data'
-testset_folder='./train_data'
+testset_folder='./testset'
 mdl_folder='./mdl_final'
+# mdl_folder='./'
 M=30#observation symbol number
 N=10#num of hidden states
 mx_it=500
@@ -109,7 +110,7 @@ class HMM:
 
             print("%s No.%d probability: %f"%(self.mdl,iter,pro))
 
-            if (np.abs(old_pro-pro)<=1e-2 and pro>=old_pro) or iter==max_iter-1:
+            if (np.abs(old_pro-pro)<=1e-3 and pro>=old_pro) or iter==max_iter-1:
                 dict['N']=self.N
                 dict['M']=self.M
                 dict['A']=self.A
