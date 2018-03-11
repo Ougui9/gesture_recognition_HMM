@@ -15,19 +15,19 @@ Python 3
 
 ## test Results
 
-###result of dataset 1  
+1. Result of dataset 1  
 
 ![alt text](https://github.com/Ougui9/gesture_recognition_HMM/blob/master/res/test11.jpg)  
 
-###result of dataset 2  
+2. Result of dataset 2  
 
 ![alt text](https://github.com/Ougui9/gesture_recognition_HMM/blob/master/res/test12.jpg)  
 
-###result of dataset 3  
+3. Result of dataset 3  
 
 ![alt text](https://github.com/Ougui9/gesture_recognition_HMM/blob/master/res/test13.jpg)  
 
-###result of dataset 4  
+4. Result of dataset 4  
 
 ![alt text](https://github.com/Ougui9/gesture_recognition_HMM/blob/master/res/test14.jpg)  
   
